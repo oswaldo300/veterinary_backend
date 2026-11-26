@@ -1,0 +1,20 @@
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.class
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment configuration (NEVER commit real credentials).
+# Copy application.properties.example to application.properties and
+# fill in your own local values.
+src/main/resources/application.properties

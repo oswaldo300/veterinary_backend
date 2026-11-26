@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------------
+# Veterinary Backend — local configuration template
+# ---------------------------------------------------------------------------
+# 1. Copy this file to "application.properties" (same folder).
+# 2. Fill in YOUR OWN values. application.properties is gitignored and
+#    must NEVER be committed: it holds real credentials.
+# ---------------------------------------------------------------------------
+
+# --- PostgreSQL (production / local development) ---
+# Create the database first:
+#   CREATE DATABASE veterinary;
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/veterinary}
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# --- JPA / Hibernate ---
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.open-in-view=false
+
+# --- JWT ---
+# HS256 needs a secret of at least 32 bytes (64 characters recommended).
+# Generate one, for example with:
+#   openssl rand -hex 32
+# and export it as an environment variable. There is NO default on purpose:
+# the application will not start without JWT_SECRET set.
+jwt.secret=${JWT_SECRET:}
+jwt.expiration=86400000
