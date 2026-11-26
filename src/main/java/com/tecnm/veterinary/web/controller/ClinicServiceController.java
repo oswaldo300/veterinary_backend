@@ -90,7 +90,9 @@ public class ClinicServiceController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Service not found")
     @ApiResponse(responseCode = "409", description = "The service is used in an appointment and cannot be deleted")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long serviceId) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Id of the service to delete", example = "1", required = true)
+            @PathVariable("id") Long serviceId) {
         if (clinicServiceService.delete(serviceId)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

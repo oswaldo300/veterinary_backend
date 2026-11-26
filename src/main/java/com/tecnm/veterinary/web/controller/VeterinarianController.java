@@ -91,7 +91,9 @@ public class VeterinarianController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Veterinarian not found")
     @ApiResponse(responseCode = "409", description = "The veterinarian still has appointments and cannot be deleted")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long veterinarianId) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Id of the veterinarian to delete", example = "1", required = true)
+            @PathVariable("id") Long veterinarianId) {
         if (veterinarianService.delete(veterinarianId)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

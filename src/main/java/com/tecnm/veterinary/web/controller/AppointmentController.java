@@ -103,7 +103,9 @@ public class AppointmentController {
     @ApiResponse(responseCode = "204", description = "Appointment deleted")
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Appointment not found")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long appointmentId) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Id of the appointment to delete", example = "1", required = true)
+            @PathVariable("id") Long appointmentId) {
         if (appointmentService.delete(appointmentId)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }

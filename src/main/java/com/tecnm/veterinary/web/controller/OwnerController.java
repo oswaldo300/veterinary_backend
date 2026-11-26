@@ -91,7 +91,9 @@ public class OwnerController {
     @ApiResponse(responseCode = "401", description = "Missing or invalid JWT token")
     @ApiResponse(responseCode = "404", description = "Owner not found")
     @ApiResponse(responseCode = "409", description = "The owner still has pets and cannot be deleted")
-    public ResponseEntity<Void> delete(@PathVariable("id") String ownerId) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Id of the owner to delete", example = "OWN-001", required = true)
+            @PathVariable("id") String ownerId) {
         if (ownerService.delete(ownerId)) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
