@@ -243,4 +243,105 @@ class VeterinaryApiIntegrationTest {
                                 + "\"ownerId\": \"OWN-DOES-NOT-EXIST\"}"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void createOwnerWithInvalidBodyReturns400() throws Exception {
+        String token = loginAsDemoOwner();
+        mockMvc.perform(post("/owners")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": \"OWN-400\", \"firstName\": \"\", "
+                                + "\"lastName\": \"User\", \"phone\": \"9990000000\", "
+                                + "\"email\": \"not-an-email\", \"password\": \"Vet1234!\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.fields.firstName").exists())
+                .andExpect(jsonPath("$.fields.email").exists());
+    }
+
+    @Test
+    void createAppointmentWithUnknownPetReturns404() throws Exception {
+        String token = loginAsDemoOwner();
+        createOwner(token, "OWN-APPT-404");
+        long vetId = createVeterinarian(token, "VET-APPT-404");
+        long serviceId = createService(token, "Servicio APPT 404", 100.0);
+
+        mockMvc.perform(post("/appointments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"petId\": 999999, \"veterinarianId\": " + vetId
+                                + ", \"dateTime\": \"2026-12-03T10:00:00\", \"reason\": \"Control\", "
+                                + "\"status\": \"SCHEDULED\", \"services\": ["
+                                + "{\"serviceId\": " + serviceId + ", \"quantity\": 1}]}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void createAppointmentWithUnknownServiceReturns404() throws Exception {
+        String token = loginAsDemoOwner();
+        createOwner(token, "OWN-SVC-404");
+        long petId = createPet(token, "OWN-SVC-404", "Milo");
+        long vetId = createVeterinarian(token, "VET-SVC-404");
+
+        mockMvc.perform(post("/appointments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"petId\": " + petId + ", \"veterinarianId\": " + vetId
+                                + ", \"dateTime\": \"2026-12-03T11:00:00\", \"reason\": \"Control\", "
+                                + "\"status\": \"SCHEDULED\", \"services\": ["
+                                + "{\"serviceId\": 999999, \"quantity\": 1}]}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void createOwnerWithDuplicateEmailReturns409() throws Exception {
+        String token = loginAsDemoOwner();
+        createOwner(token, "OWN-DUP1");
+
+        mockMvc.perform(post("/owners")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"id\": \"OWN-DUP2\", \"firstName\": \"Other\", "
+                                + "\"lastName\": \"User\", \"phone\": \"9990000001\", "
+                                + "\"email\": \"own-dup1@example.com\", \"password\": \"Vet1234!\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void deleteVeterinarianWithAppointmentsReturns409() throws Exception {
+        String token = loginAsDemoOwner();
+        createOwner(token, "OWN-VET409");
+        long petId = createPet(token, "OWN-VET409", "Bella");
+        long vetId = createVeterinarian(token, "VET-DEL-409");
+        long serviceId = createService(token, "Servicio VET 409", 200.0);
+
+        mockMvc.perform(post("/appointments")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"petId\": " + petId + ", \"veterinarianId\": " + vetId
+                                + ", \"dateTime\": \"2026-12-04T09:00:00\", \"reason\": \"Control\", "
+                                + "\"status\": \"SCHEDULED\", \"services\": ["
+                                + "{\"serviceId\": " + serviceId + ", \"quantity\": 1}]}"))
+                .andExpect(status().isCreated());
+
+        // The veterinarian is referenced by an appointment: 409, never 500.
+        mockMvc.perform(delete("/veterinarians/" + vetId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void createPetWithMalformedJsonReturns400() throws Exception {
+        String token = loginAsDemoOwner();
+        mockMvc.perform(post("/pets")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Rex\", \"species\": "))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
 }
