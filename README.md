@@ -37,6 +37,51 @@ export JWT_SECRET=tu_clave_secreta_de_al_menos_64_caracteres
 
 Swagger UI: http://localhost:8080/swagger-ui.html
 
+## Defense checklist — Dec 1 (live demo)
+
+Run this exact sequence on the defense machine before presenting:
+
+1. Clone the repository (branch `main`):
+   ```bash
+   git clone https://github.com/oswaldo300/veterinary_backend.git
+   cd veterinary_backend
+   ```
+2. Create the database (PostgreSQL):
+   ```sql
+   CREATE DATABASE veterinary;
+   ```
+3. Set the environment variables (no defaults on purpose):
+   ```bash
+   export DB_URL=jdbc:postgresql://localhost:5432/veterinary
+   export DB_USERNAME=postgres
+   export DB_PASSWORD=tu_contrasena
+   export JWT_SECRET=tu_clave_secreta_de_al_menos_64_caracteres
+   ```
+4. Run the API:
+   ```bash
+   ./gradlew bootRun
+   ```
+   If `./gradlew` fails because `gradle-wrapper.jar` is missing, run with
+   IntelliJ's bundled Gradle instead, or place the wrapper jar in
+   `gradle/wrapper/` first.
+5. Open Swagger UI: http://localhost:8080/swagger-ui.html
+6. Log in (`POST /auth/login`) with the demo owner:
+   ```json
+   {"clientId": "OWN-001", "password": "Vet1234!"}
+   ```
+7. Click **Authorize**, paste **only the token** (no `Bearer ` prefix),
+   click Authorize.
+8. Run a live CRUD + appointment flow in Swagger UI:
+   - `GET /pets` (seeded pet Firulais is listed).
+   - `POST /pets` to create a pet, `PUT /pets/{id}` to update it.
+   - `POST /appointments` with nested services (see the example below) —
+     the response shows the server-computed `total` and the `details`.
+   - `PUT /appointments/{id}` to change the `status` to `COMPLETED`.
+   - `DELETE /appointments/{id}` (204) — its details are deleted with it.
+9. Show the error contract: `GET /pets` without a token returns 401,
+   `GET /pets/999999` returns 404, deleting a service used in an
+   appointment returns 409 (never 500).
+
 ## Verify flow (login -> Authorize -> consume)
 
 1. `POST /auth/login` with
@@ -105,7 +150,24 @@ from the service price; the client never sends totals.
 ./gradlew test
 ```
 
-Integration tests (H2 in-memory) cover: login OK / wrong credentials 401,
-protected endpoints without token 401, full pet CRUD, appointment creation
-with nested services and cascade persistence, 404 on missing ids, and
-409 (not 500) when deleting a service used in an appointment.
+Integration tests (H2 in-memory, `VeterinaryApiIntegrationTest`) cover:
+
+- Login OK / wrong credentials 401 / unknown owner 401; the owner response
+  never leaks the password hash.
+- Full CRUD cycle for every catalog: owners (including "update without a
+  password keeps the stored hash and login still works"), pets,
+  veterinarians and services — create 201, get, update, delete 204,
+  get after delete 404.
+- Appointment lifecycle: create with nested services (server-computed
+  total), get with details, update status to COMPLETED keeping the booked
+  services and the total, delete 204 and get 404 afterwards.
+- Security: `GET` without a token returns 401 on every protected group
+  (`/owners`, `/pets`, `/veterinarians`, `/services`, `/appointments`).
+- Cascade: creating an appointment persists its details; deleting an
+  appointment removes its details (the freed service can then be deleted).
+- Error contract: 404 on missing ids, 400 on invalid bodies and malformed
+  JSON, 409 (not 500) when deleting an owner with pets, a pet with
+  appointments, a veterinarian with appointments, or a service used in an
+  appointment.
+- Seeded demo data: the list endpoints return the demo owner `OWN-001`,
+  veterinarian `VET-1001`, the 5 seeded services and the pet Firulais.
